@@ -1,0 +1,117 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: linear-gradient(
+    90deg,
+    rgb(18, 194, 91) 0%,
+    rgb(2, 116, 230) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  border: 2px solid #fff;
+  padding: 30px 20px;
+  width: 40%;
+  min-width: 450px;
+}
+
+.new-place-container {
+  background-color: #fff;
+  padding: 30px 20px;
+  border-radius: 5px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  display: flex;
+}
+
+.new-place-container input {
+  flex: 3;
+  font-size: 1rem;
+  border: 2px solid #d1d3d4;
+  border-radius: 5px;
+  padding: 12px;
+  font-weight: 500;
+
+}
+
+.new-place-container input:focus {
+  outline: none;
+  border-color: rgb(18, 194, 91);
+}
+
+.new-place-button {
+  flex: 1;
+  border-radius: 5px;
+  font-weight: 500;
+  height: 100%;
+  font-size: 1rem;
+  border: none;
+  background-color: rgb(0, 0, 0);
+  color: #fff;
+  padding: 12px;
+  margin-left: 12px;
+  cursor: pointer;
+}
+
+.places-container {
+  background-color:rgba(51, 203, 122, 0.372);
+  padding: 30px 20px;
+  margin-top: 60px;
+  border-radius: 10px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+  width: 100%;
+}
+
+.place-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  margin-top: 12px;
+  background-color: #fff;
+  padding: 10px 5px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.place-item i {
+  background-color: black;
+  color: #fff;
+  padding: 12px;
+  border-radius: 5px;
+}
+
+.place-item i:hover {
+  cursor: pointer;
+}
+
+.place-item p {
+  margin-left: 40%;
+}
+
+.place-item p:hover {
+  cursor: pointer;
+}
+
+/* UTILITIES*/
+
+.error {
+  border: 2px solid red !important;
+}
+
+.error::placeholder {
+  color: red;
+}
+
+.completed {
+  text-decoration: line-through;
+}
