@@ -124,4 +124,8 @@ body {
     width: 30px;
     height: 48px;
   }
+
+  .place-item p {
+    margin-left: 10%;
+  }
 }
