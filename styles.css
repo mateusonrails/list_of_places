@@ -39,7 +39,6 @@ body {
   border-radius: 5px;
   padding: 12px;
   font-weight: 500;
-
 }
 
 .new-place-container input:focus {
@@ -114,4 +113,15 @@ body {
 
 .completed {
   text-decoration: line-through;
+}
+
+@media screen and (max-width: 1020px) {
+  .container {
+    min-width: 400px;
+  }
+
+  .new-place-container input {
+    width: 30px;
+    height: 48px;
+  }
 }
