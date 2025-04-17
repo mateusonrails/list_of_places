@@ -1,141 +1,155 @@
-const inputElement = document.querySelector(".new-place-input");
-const addPlaceButton = document.querySelector(".new-place-button");
-const placesContainer = document.querySelector(".places-container");
+document.addEventListener('DOMContentLoaded', async () => {
+  const input = document.querySelector('.new-place-input');
+  const button = document.querySelector('.new-place-button');
+  const container = document.querySelector('.places-container');
+  let useLocalStorage = false;
 
-// Validação do input
-const validateInput = () => inputElement.value.trim().length > 0;
-
-// Manipulador de mudança no input
-const handleInputChange = () => {
-  const inputIsValid = validateInput();
-  if (inputIsValid) {
-    inputElement.classList.remove("error");
-  }
-};
-
-// Adicionar novo lugar
-const handleAddPlace = async () => {
-  const inputIsValid = validateInput();
-
-  if (!inputIsValid) {
-    return inputElement.classList.add("error");
-  }
-
-  try {
-    const response = await fetch('/.netlify/functions/savePlace', {
-      method: 'POST',
-      body: JSON.stringify({
-        description: inputElement.value,
-        isCompleted: false
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Falha ao adicionar lugar');
+  const checkAPI = async () => {
+    try {
+      const response = await fetch('/.netlify/functions/getPlaces');
+      return response.ok;
+    } catch {
+      return false;
     }
+  };
 
-    inputElement.value = "";
-    await fetchPlaces(); // Recarrega a lista após adicionar
-  } catch (error) {
-    console.error("Erro ao adicionar lugar:", error);
-  }
-};
+  const initLocalFallback = () => {
+    useLocalStorage = true;
+    console.log('Usando localStorage como fallback');
+    if (localStorage.getItem('places')) {
+      renderPlaces(JSON.parse(localStorage.getItem('places')));
+    }
+  };
 
-// Carregar lugares do banco de dados
-const fetchPlaces = async () => {
-  try {
-    const response = await fetch('/.netlify/functions/getPlaces');
+  const renderPlaces = (places) => {
+    container.innerHTML = '';
+    places.forEach(place => {
+      const placeItem = document.createElement('div');
+      placeItem.className = 'place-item';
+      
+      const placeText = document.createElement('p');
+      placeText.textContent = place.description;
+      if (place.isCompleted) placeText.classList.add('completed');
+      
+      const deleteIcon = document.createElement('i');
+      deleteIcon.className = 'far fa-trash-alt';
+      
+      placeText.addEventListener('click', () => toggleComplete(place, placeText));
+      deleteIcon.addEventListener('click', () => deletePlace(place, placeItem));
+      
+      placeItem.append(placeText, deleteIcon);
+      container.appendChild(placeItem);
+    });
+  };
+
+  const getPlaces = async () => {
+    if (useLocalStorage) {
+      return JSON.parse(localStorage.getItem('places')) || [];
+    }
     
-    if (!response.ok) {
-      throw new Error('Falha ao carregar lugares');
+    try {
+      const response = await fetch('/.netlify/functions/getPlaces');
+      return await response.json();
+    } catch {
+      initLocalFallback();
+      return JSON.parse(localStorage.getItem('places')) || [];
     }
+  };
 
-    const places = await response.json();
-    renderPlaces(places);
-  } catch (error) {
-    console.error("Erro ao carregar lugares:", error);
-  }
-};
-
-// Renderizar lugares na tela
-const renderPlaces = (places) => {
-  placesContainer.innerHTML = '';
-
-  places.forEach(place => {
-    const placeItemContainer = document.createElement("div");
-    placeItemContainer.classList.add("place-item");
-
-    const placeContent = document.createElement("p");
-    placeContent.innerText = place.description;
-
-    if (place.isCompleted) {
-      placeContent.classList.add("completed");
+  const savePlace = async (description) => {
+    const newPlace = { description, isCompleted: false };
+    
+    if (useLocalStorage) {
+      const places = JSON.parse(localStorage.getItem('places')) || [];
+      places.push(newPlace);
+      localStorage.setItem('places', JSON.stringify(places));
+      return newPlace;
     }
+    
+    try {
+      const response = await fetch('/.netlify/functions/savePlace', {
+        method: 'POST',
+        body: JSON.stringify(newPlace),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return await response.json();
+    } catch {
+      initLocalFallback();
+      return savePlace(description); // Chama recursivamente em modo local
+    }
+  };
 
-    placeContent.addEventListener("click", () => handleTogglePlace(place));
+  const deletePlace = async (place, element) => {
+    if (useLocalStorage) {
+      const places = JSON.parse(localStorage.getItem('places')).filter(p => 
+        p.description !== place.description
+      );
+      localStorage.setItem('places', JSON.stringify(places));
+      element.remove();
+      return;
+    }
+    
+    try {
+      await fetch('/.netlify/functions/deletePlace', {
+        method: 'POST',
+        body: JSON.stringify({ id: place.id }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      element.remove();
+    } catch {
+      initLocalFallback();
+      deletePlace(place, element); // Chama recursivamente em modo local
+    }
+  };
 
-    const deleteItem = document.createElement("i");
-    deleteItem.classList.add("far");
-    deleteItem.classList.add("fa-trash-alt");
-    deleteItem.addEventListener("click", () => handleDeletePlace(place));
+  const toggleComplete = async (place, element) => {
+    place.isCompleted = !place.isCompleted;
+    element.classList.toggle('completed');
+    
+    if (useLocalStorage) {
+      const places = JSON.parse(localStorage.getItem('places'));
+      const index = places.findIndex(p => p.description === place.description);
+      if (index !== -1) places[index].isCompleted = place.isCompleted;
+      localStorage.setItem('places', JSON.stringify(places));
+      return;
+    }
+    
+    try {
+      await fetch('/.netlify/functions/updatePlace', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: place.id,
+          isCompleted: place.isCompleted
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch {
+      initLocalFallback();
+      toggleComplete(place, element); // Chama recursivamente em modo local
+    }
+  };
 
-    placeItemContainer.appendChild(placeContent);
-    placeItemContainer.appendChild(deleteItem);
-    placesContainer.appendChild(placeItemContainer);
+  // Inicialização
+  const apiAvailable = await checkAPI();
+  if (!apiAvailable) initLocalFallback();
+  renderPlaces(await getPlaces());
+
+  // Event Listeners
+  button.addEventListener('click', async () => {
+    if (input.value.trim() === '') {
+      input.classList.add('error');
+      return;
+    }
+    
+    await savePlace(input.value.trim());
+    input.value = '';
+    input.classList.remove('error');
+    renderPlaces(await getPlaces());
   });
-};
 
-// Alternar status de completado
-const handleTogglePlace = async (place) => {
-  try {
-    const response = await fetch('/.netlify/functions/updatePlace', {
-      method: 'POST',
-      body: JSON.stringify({
-        id: place.id,
-        isCompleted: !place.isCompleted
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Falha ao atualizar lugar');
+  input.addEventListener('input', () => {
+    if (input.value.trim() !== '') {
+      input.classList.remove('error');
     }
-
-    await fetchPlaces(); // Recarrega a lista após atualizar
-  } catch (error) {
-    console.error("Erro ao atualizar lugar:", error);
-  }
-};
-
-// Deletar lugar
-const handleDeletePlace = async (place) => {
-  try {
-    const response = await fetch('/.netlify/functions/deletePlace', {
-      method: 'POST',
-      body: JSON.stringify({ id: place.id }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('Falha ao deletar lugar');
-    }
-
-    await fetchPlaces(); // Recarrega a lista após deletar
-  } catch (error) {
-    console.error("Erro ao deletar lugar:", error);
-  }
-};
-
-// Event Listeners
-addPlaceButton.addEventListener("click", handleAddPlace);
-inputElement.addEventListener("change", handleInputChange);
-
-// Carregar lugares quando a página for carregada
-document.addEventListener('DOMContentLoaded', fetchPlaces);
+  });
+});
