@@ -406,7 +406,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "npm audit fix || true"
+    "postinstall": "npm audit fix || true",
+    "build": "echo 'Build completo'"
   },
   "repository": {
     "type": "git",
